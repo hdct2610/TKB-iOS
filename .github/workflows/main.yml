@@ -7,33 +7,40 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-14
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup .NET 9
+    # 1. Ép dùng .NET 9 chuẩn và tắt tính năng tự cập nhật SDK lỗi
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
 
-    - name: Install MAUI Workload
-      run: dotnet workload install maui-ios
-
-    - name: Patch Xcode Version Check
+    # 2. Cài đặt workload iOS (Chỉ iOS để nhanh và tránh lỗi Android)
+    - name: Install iOS Workload
       run: |
-        PROJECT_FILE=$(find . -name "*.csproj" -not -path "*/obj/*" -not -path "*/bin/*" | head -n 1)
+        dotnet config --global workload.useworkloadsets false
+        dotnet workload install maui-ios
+
+    # 3. Vá lỗi Xcode 26 bằng cách tạo file cấu hình ưu tiên cao nhất
+    - name: Patch Xcode Check
+      run: |
+        PROJECT_FILE=$(find . -name "*.csproj" | head -n 1)
         PROJECT_DIR=$(dirname "$PROJECT_FILE")
         echo '<Project>
           <PropertyGroup>
             <_SuppressXcodeVersionCheck>true</_SuppressXcodeVersionCheck>
+            <_XcodeVersionCheckDone>true</_XcodeVersionCheckDone>
             <DocumentBasedAppleSdkSupport>true</DocumentBasedAppleSdkSupport>
           </PropertyGroup>
         </Project>' > "$PROJECT_DIR/Directory.Build.props"
 
+    # 4. Build IPA
     - name: Build IPA
       run: |
-        PROJECT_FILE=$(find . -name "*.csproj" -not -path "*/obj/*" -not -path "*/bin/*" | head -n 1)
+        PROJECT_FILE=$(find . -name "*.csproj" | head -n 1)
         dotnet publish "$PROJECT_FILE" -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision=""
       
     - name: Upload IPA Artifact
