@@ -1,10 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
-		<TargetFrameworks>net9.0-ios;net9.0-android</TargetFrameworks>
-		<_SuppressXcodeVersionCheck>true</_SuppressXcodeVersionCheck>
-        <DocumentBasedAppleSdkSupport>true</DocumentBasedAppleSdkSupport>
-		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
+		<TargetFrameworks>net9.0-ios</TargetFrameworks>
 
 		<OutputType>Exe</OutputType>
 		<RootNamespace>laythoikhoabieucuataoios17</RootNamespace>
@@ -14,12 +10,14 @@
 		<Nullable>enable</Nullable>
 
 		<ApplicationTitle>TKB Huy Hoàng</ApplicationTitle>
-		<ApplicationId>com.huyhoang.tkb</ApplicationId>
-		<ApplicationVersion>1.0</ApplicationVersion>
+		<ApplicationId>com.huyhoang.laythoikhoabieucuataoios17</ApplicationId>
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationVersion>1</ApplicationVersion>
+
+		<_SuppressXcodeVersionCheck>true</_SuppressXcodeVersionCheck>
+		<DocumentBasedAppleSdkSupport>true</DocumentBasedAppleSdkSupport>
 
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
-		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</TargetPlatformMinVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
