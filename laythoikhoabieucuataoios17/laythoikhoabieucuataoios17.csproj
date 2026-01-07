@@ -16,12 +16,13 @@
 		<_XcodeVersionCheckDone>true</_XcodeVersionCheckDone>
 		<DocumentBasedAppleSdkSupport>true</DocumentBasedAppleSdkSupport>
 
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
+		<TargetPlatformIdentifier>ios</TargetPlatformIdentifier>
+		<TargetPlatformVersion>17.0</TargetPlatformVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="HtmlAgilityPack" Version="1.11.59" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.21" />
-		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.21" />
 	</ItemGroup>
 </Project>
