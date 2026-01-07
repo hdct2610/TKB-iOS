@@ -7,17 +7,27 @@ on:
 
 jobs:
   build:
-    # Dùng macos-14 để ổn định
     runs-on: macos-14
     
     steps:
     - uses: actions/checkout@v4
     
-    # 1. Tạo file global.json ép dùng .NET 9 chuẩn
+    # 1. Tạo file global.json (Giữ .NET 9 ổn định)
     - name: Create global.json
       run: echo '{"sdk":{"version":"9.0.100"}}' > global.json
 
-    # 2. Cài đặt môi trường
+    # 2. CHIÊU CUỐI: Tạo Directory.Build.props để tắt kiểm tra Xcode từ trứng nước
+    # File này có quyền lực cao hơn dòng lệnh, ép trình biên dịch bỏ qua lỗi Xcode 26
+    - name: Create Directory.Build.props
+      run: |
+        echo '<Project>' > Directory.Build.props
+        echo '  <PropertyGroup>' >> Directory.Build.props
+        echo '    <_SuppressXcodeVersionCheck>true</_SuppressXcodeVersionCheck>' >> Directory.Build.props
+        echo '    <DocumentBasedAppleSdkSupport>true</DocumentBasedAppleSdkSupport>' >> Directory.Build.props
+        echo '  </PropertyGroup>' >> Directory.Build.props
+        echo '</Project>' >> Directory.Build.props
+
+    # 3. Cài đặt môi trường
     - name: Setup .NET 9
       uses: actions/setup-dotnet@v4
       with:
@@ -26,10 +36,10 @@ jobs:
     - name: Install MAUI Workload
       run: dotnet workload install maui
       
-    # 3. Build IPA (ĐÃ THÊM LỆNH CHẶN LỖI XCODE)
-    # Lưu ý: -p:_SuppressXcodeVersionCheck=true là chìa khóa để fix lỗi này
+    # 4. Build IPA
+    # Đã có Directory.Build.props bảo kê, lệnh này sẽ chạy mượt
     - name: Build IPA (Ad-Hoc)
-      run: dotnet publish **/*.csproj -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision="" -p:_SuppressXcodeVersionCheck=true
+      run: dotnet publish **/*.csproj -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision=""
       
     - name: Upload IPA Artifact
       uses: actions/upload-artifact@v4
