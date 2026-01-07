@@ -7,33 +7,31 @@ on:
 
 jobs:
   build:
-    # Dùng macOS 14 để có môi trường ổn định nhất cho iOS 17
-    runs-on: macos-14
+    runs-on: macos-15
     
     steps:
     - uses: actions/checkout@v4
     
-    # 1. Ép máy ảo dùng .NET 9 chuẩn thông qua global.json
-    - name: Setup .NET 9
+    - name: Set Xcode version
       run: |
-        echo '{"sdk":{"version":"9.0.100"}}' > global.json
-        dotnet --version
+        sudo xcode-select -s /Applications/Xcode_16.2.app
+        xcodebuild -version
 
-    # 2. Cài đặt môi trường .NET 9
-    - name: Setup .NET SDK
+    - name: Create global.json
+      run: echo '{"sdk":{"version":"9.0.100"}}' > global.json
+
+    - name: Setup .NET 9
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.100'
 
-    # 3. Cài đặt workload iOS (Đã sửa câu lệnh đúng)
     - name: Install iOS Workload
-      run: dotnet workload install maui-ios --source https://api.nuget.org/v3/index.json
+      run: dotnet workload install maui-ios
 
-    # 4. Build IPA
     - name: Build IPA
       run: |
         PROJECT_FILE=$(find . -name "*.csproj" -not -path "*/obj/*" -not -path "*/bin/*" | head -n 1)
-        dotnet publish "$PROJECT_FILE" -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision=""
+        dotnet publish "$PROJECT_FILE" -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision="" -p:_SuppressXcodeVersionCheck=true -p:_XcodeVersionCheckDone=true
       
     - name: Upload IPA Artifact
       uses: actions/upload-artifact@v4
