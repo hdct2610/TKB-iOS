@@ -7,29 +7,29 @@ on:
 
 jobs:
   build:
+    # Dùng macos-14 để ổn định
     runs-on: macos-14
     
     steps:
     - uses: actions/checkout@v4
     
-    # 1. Tạo file global.json để ép dùng .NET 9.0.100 (Tránh lỗi SDK 10)
+    # 1. Tạo file global.json ép dùng .NET 9 chuẩn
     - name: Create global.json
       run: echo '{"sdk":{"version":"9.0.100"}}' > global.json
 
-    # 2. Cài đặt .NET 9 chuẩn
+    # 2. Cài đặt môi trường
     - name: Setup .NET 9
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.100'
         
-    # 3. Cài MAUI
     - name: Install MAUI Workload
       run: dotnet workload install maui
       
-    # 4. Build IPA (SỬA Ở ĐÂY)
-    # Thêm **/*.csproj để nó tự quét tìm file dự án trong các thư mục con
+    # 3. Build IPA (ĐÃ THÊM LỆNH CHẶN LỖI XCODE)
+    # Lưu ý: -p:_SuppressXcodeVersionCheck=true là chìa khóa để fix lỗi này
     - name: Build IPA (Ad-Hoc)
-      run: dotnet publish **/*.csproj -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision=""
+      run: dotnet publish **/*.csproj -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision="" -p:_SuppressXcodeVersionCheck=true
       
     - name: Upload IPA Artifact
       uses: actions/upload-artifact@v4
