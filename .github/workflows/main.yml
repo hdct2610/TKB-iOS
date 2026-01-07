@@ -7,40 +7,32 @@ on:
 
 jobs:
   build:
+    # Dùng macOS 14 để có môi trường ổn định nhất cho iOS 17
     runs-on: macos-14
     
     steps:
     - uses: actions/checkout@v4
     
-    # 1. Ép dùng .NET 9 chuẩn và tắt tính năng tự cập nhật SDK lỗi
-    - name: Setup .NET
+    # 1. Ép máy ảo dùng .NET 9 chuẩn thông qua global.json
+    - name: Setup .NET 9
+      run: |
+        echo '{"sdk":{"version":"9.0.100"}}' > global.json
+        dotnet --version
+
+    # 2. Cài đặt môi trường .NET 9
+    - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x'
+        dotnet-version: '9.0.100'
 
-    # 2. Cài đặt workload iOS (Chỉ iOS để nhanh và tránh lỗi Android)
+    # 3. Cài đặt workload iOS (Đã sửa câu lệnh đúng)
     - name: Install iOS Workload
-      run: |
-        dotnet config --global workload.useworkloadsets false
-        dotnet workload install maui-ios
-
-    # 3. Vá lỗi Xcode 26 bằng cách tạo file cấu hình ưu tiên cao nhất
-    - name: Patch Xcode Check
-      run: |
-        PROJECT_FILE=$(find . -name "*.csproj" | head -n 1)
-        PROJECT_DIR=$(dirname "$PROJECT_FILE")
-        echo '<Project>
-          <PropertyGroup>
-            <_SuppressXcodeVersionCheck>true</_SuppressXcodeVersionCheck>
-            <_XcodeVersionCheckDone>true</_XcodeVersionCheckDone>
-            <DocumentBasedAppleSdkSupport>true</DocumentBasedAppleSdkSupport>
-          </PropertyGroup>
-        </Project>' > "$PROJECT_DIR/Directory.Build.props"
+      run: dotnet workload install maui-ios --source https://api.nuget.org/v3/index.json
 
     # 4. Build IPA
     - name: Build IPA
       run: |
-        PROJECT_FILE=$(find . -name "*.csproj" | head -n 1)
+        PROJECT_FILE=$(find . -name "*.csproj" -not -path "*/obj/*" -not -path "*/bin/*" | head -n 1)
         dotnet publish "$PROJECT_FILE" -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision=""
       
     - name: Upload IPA Artifact
