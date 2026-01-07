@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="laythoikhoabieucuataoios17.MainPage"
+             BackgroundColor="#f0f0f0">
+
+    <Grid RowDefinitions="Auto, *">
+        <Label Text="Thời Khóa Biểu - Huy Hoàng" 
+               FontSize="20" FontAttributes="Bold" 
+               HorizontalOptions="Center" Padding="20" TextColor="Black"/>
+
+        <CollectionView Grid.Row="1" x:Name="cvSchedule" Margin="10">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Margin="0,5" Padding="15" StrokeShape="RoundRectangle 10" BackgroundColor="White" StrokeThickness="0">
+                        <StackLayout>
+                            <Label Text="{Binding Day}" TextColor="#007AFF" FontAttributes="Bold" FontSize="16"/>
+                            <Label Text="{Binding Session}" TextColor="Gray" FontSize="12" Margin="0,2,0,5"/>
+                            <Label Text="{Binding SubjectInfo}" TextColor="#333" FontSize="14"/>
+                        </StackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <ActivityIndicator x:Name="loading" IsRunning="True" 
+                           HorizontalOptions="Center" VerticalOptions="Center" 
+                           Grid.Row="1" Color="#007AFF"/>
+    </Grid>
+
+</ContentPage>
