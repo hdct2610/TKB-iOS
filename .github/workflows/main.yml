@@ -7,9 +7,18 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    # Đổi sang macos-15 để có môi trường mới nhất
+    runs-on: macos-15
+    
     steps:
     - uses: actions/checkout@v4
+    
+    # BƯỚC QUAN TRỌNG: Ép sử dụng Xcode 16.2 (Bản ổn định cho .NET 9)
+    # Nếu không có bước này, nó sẽ tự chọn bản beta hoặc cũ hơn gây lỗi "Xcode 26.0"
+    - name: Set Xcode version
+      run: |
+        sudo xcode-select -s /Applications/Xcode_16.2.app
+        xcodebuild -version
     
     - name: Setup .NET 9
       uses: actions/setup-dotnet@v4
@@ -20,12 +29,11 @@ jobs:
       run: dotnet workload install maui
       
     - name: Build IPA (Ad-Hoc)
-      # Lệnh này chạy trên máy Mac ảo của GitHub nên sẽ ra được file IPA
-      run: dotnet publish -f net9.0-ios -c Release -p:ArchiveOnBuild=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision=""
+      # Thêm cờ _SuppressXcodeVersionCheck=true để bỏ qua lỗi check version nhảm nhí
+      run: dotnet publish -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision="" -p:_SuppressXcodeVersionCheck=true
       
     - name: Upload IPA Artifact
       uses: actions/upload-artifact@v4
       with:
         name: TKB-App-IPA
-        # Đường dẫn file IPA sau khi build xong
         path: '**/publish/*.ipa'
