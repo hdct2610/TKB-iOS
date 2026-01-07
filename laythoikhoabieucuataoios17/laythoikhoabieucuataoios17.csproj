@@ -2,6 +2,8 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>net9.0-ios;net9.0-android</TargetFrameworks>
+		<_SuppressXcodeVersionCheck>true</_SuppressXcodeVersionCheck>
+        <DocumentBasedAppleSdkSupport>true</DocumentBasedAppleSdkSupport>
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net9.0-windows10.0.19041.0</TargetFrameworks>
 
 		<OutputType>Exe</OutputType>
