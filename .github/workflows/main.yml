@@ -11,38 +11,46 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
-    
-    # 1. Tạo file global.json (Giữ .NET 9 ổn định)
-    - name: Create global.json
-      run: echo '{"sdk":{"version":"9.0.100"}}' > global.json
 
-    # 2. CHIÊU CUỐI: Tạo Directory.Build.props để tắt kiểm tra Xcode từ trứng nước
-    # File này có quyền lực cao hơn dòng lệnh, ép trình biên dịch bỏ qua lỗi Xcode 26
-    - name: Create Directory.Build.props
-      run: |
-        echo '<Project>' > Directory.Build.props
-        echo '  <PropertyGroup>' >> Directory.Build.props
-        echo '    <_SuppressXcodeVersionCheck>true</_SuppressXcodeVersionCheck>' >> Directory.Build.props
-        echo '    <DocumentBasedAppleSdkSupport>true</DocumentBasedAppleSdkSupport>' >> Directory.Build.props
-        echo '  </PropertyGroup>' >> Directory.Build.props
-        echo '</Project>' >> Directory.Build.props
+    # Chọn Xcode để tránh lỗi version mismatch
+    - name: Set Xcode version
+      run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
-    # 3. Cài đặt môi trường
     - name: Setup .NET 9
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.100'
-        
+        dotnet-version: '9.0.x'
+
+    - name: Create Directory.Build.props
+      run: |
+        cat <<EOF > Directory.Build.props
+        <Project>
+          <PropertyGroup>
+            <_SuppressXcodeVersionCheck>true</_SuppressXcodeVersionCheck>
+          </PropertyGroup>
+        </Project>
+        EOF
+
     - name: Install MAUI Workload
-      run: dotnet workload install maui
-      
-    # 4. Build IPA
-    # Đã có Directory.Build.props bảo kê, lệnh này sẽ chạy mượt
-    - name: Build IPA (Ad-Hoc)
-      run: dotnet publish **/*.csproj -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision=""
-      
+      run: dotnet workload install maui-ios
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build & Publish IPA
+      # Thêm -p:ArchiveOnBuild=true để đảm bảo đóng gói IPA
+      run: |
+        dotnet publish -f net9.0-ios \
+        -c Release \
+        -p:BuildIpa=true \
+        -p:RuntimeIdentifier=ios-arm64 \
+        -p:CodesignKey="-" \
+        -p:CodesignProvision="" \
+        -p:ArchiveOnBuild=true
+
     - name: Upload IPA Artifact
       uses: actions/upload-artifact@v4
       with:
         name: TKB-App-IPA
-        path: '**/publish/*.ipa'
+        # Tìm mọi file .ipa trong thư mục bin
+        path: '**/bin/Release/net9.0-ios/ios-arm64/*.ipa'
