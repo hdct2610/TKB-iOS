@@ -7,19 +7,12 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    # Chuyển về macos-13 để tránh bộ SDK 26.0 bị lỗi
+    runs-on: macos-13
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set Xcode version
-      run: |
-        sudo xcode-select -s /Applications/Xcode_16.2.app
-        xcodebuild -version
-
-    - name: Create global.json
-      run: echo '{"sdk":{"version":"9.0.100"}}' > global.json
-
     - name: Setup .NET 9
       uses: actions/setup-dotnet@v4
       with:
@@ -29,6 +22,7 @@ jobs:
       run: dotnet workload install maui-ios
 
     - name: Build IPA
+      # Thêm các tham số ép buộc ngay trong lệnh build
       run: |
         PROJECT_FILE=$(find . -name "*.csproj" -not -path "*/obj/*" -not -path "*/bin/*" | head -n 1)
         dotnet publish "$PROJECT_FILE" -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision="" -p:_SuppressXcodeVersionCheck=true -p:_XcodeVersionCheckDone=true
