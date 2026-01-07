@@ -7,25 +7,44 @@ on:
 
 jobs:
   build:
-    # Chuyển về macos-13 để tránh bộ SDK 26.0 bị lỗi
-    runs-on: macos-13
+    # Sử dụng máy ảo mới nhất (macOS 15 ARM)
+    runs-on: macos-latest
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup .NET 9
+    # 1. Chọn Xcode 16.0 (Bản ổn định cho .NET 9 trên macOS 15)
+    - name: Select Xcode Version
+      run: |
+        sudo xcode-select -s /Applications/Xcode_16.0.app
+        xcodebuild -version
+
+    # 2. Cài đặt .NET 9 chuẩn
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.100'
 
+    # 3. Cài workload iOS và bỏ qua lỗi đồng bộ phiên bản
     - name: Install iOS Workload
-      run: dotnet workload install maui-ios
-
-    - name: Build IPA
-      # Thêm các tham số ép buộc ngay trong lệnh build
       run: |
-        PROJECT_FILE=$(find . -name "*.csproj" -not -path "*/obj/*" -not -path "*/bin/*" | head -n 1)
-        dotnet publish "$PROJECT_FILE" -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision="" -p:_SuppressXcodeVersionCheck=true -p:_XcodeVersionCheckDone=true
+        dotnet workload install maui-ios --source https://api.nuget.org/v3/index.json
+
+    # 4. Tạo file vá lỗi tại thư mục gốc trước khi build
+    - name: Global Patch
+      run: |
+        echo '<Project>
+          <PropertyGroup>
+            <_SuppressXcodeVersionCheck>true</_SuppressXcodeVersionCheck>
+            <_XcodeVersionCheckDone>true</_XcodeVersionCheckDone>
+          </PropertyGroup>
+        </Project>' > Directory.Build.props
+
+    # 5. Build IPA
+    - name: Build IPA
+      run: |
+        PROJECT_FILE=$(find . -name "*.csproj" | head -n 1)
+        dotnet publish "$PROJECT_FILE" -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision=""
       
     - name: Upload IPA Artifact
       uses: actions/upload-artifact@v4
