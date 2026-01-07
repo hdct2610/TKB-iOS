@@ -7,50 +7,37 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15
     
     steps:
     - uses: actions/checkout@v4
-
-    # Chọn Xcode để tránh lỗi version mismatch
-    - name: Set Xcode version
-      run: sudo xcode-select -s /Applications/Xcode_15.4.app
-
+    
     - name: Setup .NET 9
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
 
-    - name: Create Directory.Build.props
-      run: |
-        cat <<EOF > Directory.Build.props
-        <Project>
-          <PropertyGroup>
-            <_SuppressXcodeVersionCheck>true</_SuppressXcodeVersionCheck>
-          </PropertyGroup>
-        </Project>
-        EOF
-
     - name: Install MAUI Workload
       run: dotnet workload install maui-ios
 
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build & Publish IPA
-      # Thêm -p:ArchiveOnBuild=true để đảm bảo đóng gói IPA
+    - name: Patch Xcode Version Check
       run: |
-        dotnet publish -f net9.0-ios \
-        -c Release \
-        -p:BuildIpa=true \
-        -p:RuntimeIdentifier=ios-arm64 \
-        -p:CodesignKey="-" \
-        -p:CodesignProvision="" \
-        -p:ArchiveOnBuild=true
+        PROJECT_FILE=$(find . -name "*.csproj" -not -path "*/obj/*" -not -path "*/bin/*" | head -n 1)
+        PROJECT_DIR=$(dirname "$PROJECT_FILE")
+        echo '<Project>
+          <PropertyGroup>
+            <_SuppressXcodeVersionCheck>true</_SuppressXcodeVersionCheck>
+            <DocumentBasedAppleSdkSupport>true</DocumentBasedAppleSdkSupport>
+          </PropertyGroup>
+        </Project>' > "$PROJECT_DIR/Directory.Build.props"
 
+    - name: Build IPA
+      run: |
+        PROJECT_FILE=$(find . -name "*.csproj" -not -path "*/obj/*" -not -path "*/bin/*" | head -n 1)
+        dotnet publish "$PROJECT_FILE" -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision=""
+      
     - name: Upload IPA Artifact
       uses: actions/upload-artifact@v4
       with:
         name: TKB-App-IPA
-        # Tìm mọi file .ipa trong thư mục bin
-        path: '**/bin/Release/net9.0-ios/ios-arm64/*.ipa'
+        path: '**/publish/*.ipa'
