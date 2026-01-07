@@ -7,30 +7,31 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    # Dùng macos-14 cho ổn định (macos-15 mới quá hay lỗi SDK)
+    runs-on: macos-14
     
     steps:
     - uses: actions/checkout@v4
     
-    # 1. Ép sử dụng Xcode 16.2 (Bản chuẩn)
-    - name: Set Xcode version
-      run: |
-        sudo xcode-select -s /Applications/Xcode_16.2.app
-        xcodebuild -version
-    
-    # 2. QUAN TRỌNG: Cố định phiên bản .NET 9.0.100 (Bản ổn định, không dùng 9.0.x)
-    - name: Setup .NET 9.0.100
+    # 1. TẠO FILE global.json ĐỂ ÉP DÙNG .NET 9.0.100
+    # Bước này cực quan trọng để chặn nó không nhảy lên .NET 10
+    - name: Create global.json
+      run: echo '{"sdk":{"version":"9.0.100"}}' > global.json
+
+    # 2. Cài đặt .NET 9 chuẩn
+    - name: Setup .NET 9
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.100' 
+        dotnet-version: '9.0.100'
         
-    # 3. Cài đặt MAUI từ file Rollback (Tránh tải bản bị lỗi Xcode 26)
-    - name: Install MAUI Workload (Stable)
-      run: dotnet workload install maui --from-rollback-file https://maui.blob.core.windows.net/metadata/rollbacks/9.0.100.json --source https://api.nuget.org/v3/index.json
+    # 3. Cài MAUI bản chuẩn (Không dùng rollback file nữa)
+    - name: Install MAUI Workload
+      run: dotnet workload install maui
       
     # 4. Build IPA
+    # Vì đã thêm cấu hình chặn check Xcode vào .csproj nên lệnh build giờ rất gọn
     - name: Build IPA (Ad-Hoc)
-      run: dotnet publish -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision="" -p:_SuppressXcodeVersionCheck=true
+      run: dotnet publish -f net9.0-ios -c Release -p:BuildIpa=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision=""
       
     - name: Upload IPA Artifact
       uses: actions/upload-artifact@v4
