@@ -1,0 +1,31 @@
+name: Build iOS for TrollStore
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET 9
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+        
+    - name: Install MAUI Workload
+      run: dotnet workload install maui
+      
+    - name: Build IPA (Ad-Hoc)
+      # Lệnh này chạy trên máy Mac ảo của GitHub nên sẽ ra được file IPA
+      run: dotnet publish -f net9.0-ios -c Release -p:ArchiveOnBuild=true -p:RuntimeIdentifier=ios-arm64 -p:CodesignKey="-" -p:CodesignProvision=""
+      
+    - name: Upload IPA Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: TKB-App-IPA
+        # Đường dẫn file IPA sau khi build xong
+        path: '**/publish/*.ipa'
